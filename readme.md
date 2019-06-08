@@ -1,6 +1,6 @@
 Favicon here or title image
 
-# Carfew - Fewer cars, more friends 🤝
+# rateMyCourse 👩‍🎓👨‍🎓
 
 Directory here
 * [Name](link here)
