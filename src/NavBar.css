@@ -1,0 +1,32 @@
+
+
+ul{
+    text-align: center;
+    list-style:none;
+    display: inline-block;
+}
+
+ul li{
+    text-align: center;
+    display: inline-block;
+    padding: 10px 20px;
+    cursor:pointer;
+    background-color:#eee;
+    color:#7B8585;
+    
+    transition:0.3s;
+}
+
+ul li:hover{
+    background-color:#98F5F4;
+}
+
+ul li.focused{
+    color:#fff;
+    background-color:#98F5F4;
+}
+
+p{
+    padding-top:15px;
+    font-size:12px;
+}
