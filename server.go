@@ -33,36 +33,35 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.Static("./build"))
 
 	// Basic Auth
-	e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-		// maybe check if username is in database and then check is password is correct
-		if username == "faith" && password == "secret" {
-			return true, nil
-		}
-		return false, nil
-	}))
+	// e.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+	// 	// maybe check if username is in database and then check is password is correct
+	// 	if username == "faith" && password == "secret" {
+	// 		return true, nil
+	// 	}
+	// 	return false, nil
+	// }))
 
 	// Template Renderer
 	renderer := &TemplateRenderer{
-		templates: template.Must(template.ParseGlob("*.html")),
+		templates: template.Must(template.ParseGlob("./build/*.html")),
 	}
 	e.Renderer = renderer
 
 	// Routes
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "./public/index.html", map[string]interface{}{
-			"name": "Dolly!",
-		})
+		return c.Render(http.StatusOK, "index.html", map[string]interface{}{})
 	})
 
-	// e.GET("/", root).Name = "example"
+	e.GET("/login", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "index.html", map[string]interface{}{})
+	})
 
-	// func root(c echo.Context) error {
-	// 	return c.Render(http.StatusOk, "index.html", map[string]interface{}{
-	// 		"name": "Dolly",
-	// 	})
-	// }
+	e.GET("/signup", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "index.html", map[string]interface{}{})
+	})
 
 	// Start Server
 	e.Logger.Fatal(e.Start(":1323"))
