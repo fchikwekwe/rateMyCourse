@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	// Gorm and postgres imports
 	"github.com/jinzhu/gorm"
@@ -32,19 +33,18 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-// User Model
+// User stores user data
 type User struct {
 	gorm.Model
-	email     string `gorm:"type:varchar(100);unique;not_null;primary_key"`
+	createdAt *time.Time
+	updatedAt *time.Time
+	userID    int    `gorm:"type:int;primary_key"`
+	email     string `gorm:"type:varchar(100);unique;not_null"`
 	username  string `gorm:"type:varchar(50);unique;not null"`
-	firstName string `gorm:"type:varchar(30)`
-	lastName  string `gorm:"type:varchar(30)`
-	password  string `gorm:"type:varchar(30)`
-}
-
-type Credentials struct {
-	Password string `json:"password", db:"password"`
-	Username string `json:"username", db:"username"`
+	firstName string `gorm:"type:varchar(30);not_null"`
+	lastName  string `gorm:"type:varchar(30);not_null"`
+	password  string `gorm:"type:varchar(30);not_null"`
+	reviews   []Review
 }
 
 func initUserDB() *gorm.DB {
@@ -59,6 +59,34 @@ func initUserDB() *gorm.DB {
 
 	return db
 }
+
+type Review struct {
+	gorm.Model
+	createdAt *time.Time
+	updatedAt *time.Time
+	reviewID  int    `gorm:"type:int;primary_key"`
+	rating    string `gorm:"type:varchar(30);not_null"`
+	text      string `gorm:"type:text"`
+}
+
+func initReviewDB() *gorm.DB {
+	// Open DB
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable", os.Getenv("host"), os.Getenv("DB_PORT"), os.Getenv("user"), os.Getenv("dbname")))
+	// Throw error if connection fails
+	if err != nil {
+		log.Print(err)
+	}
+	// Automigrate the DB
+	db.AutoMigrate(&Review{})
+
+	return db
+}
+
+type Credentials struct {
+	Password string `json:"password", db:"password"`
+	Username string `json:"username", db:"username"`
+}
+
 func main() {
 
 	// Echo instance
