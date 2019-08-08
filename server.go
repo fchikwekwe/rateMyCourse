@@ -4,6 +4,7 @@ package main
 
 import (
 	// Standard library imports
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -15,6 +16,7 @@ import (
 	// Gorm and postgres imports
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"golang.org/x/crypto/bcrypt"
 
 	// Echo and echo middleware imports
 	"github.com/labstack/echo"
@@ -36,14 +38,14 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 // User stores user data
 type User struct {
 	gorm.Model
-	createdAt *time.Time
-	updatedAt *time.Time
+	createdAt time.Time
+	updatedAt time.Time
 	userID    int    `gorm:"type:int;primary_key"`
 	email     string `gorm:"type:varchar(100);unique;not_null"`
 	username  string `gorm:"type:varchar(50);unique;not null"`
 	firstName string `gorm:"type:varchar(30);not_null"`
 	lastName  string `gorm:"type:varchar(30);not_null"`
-	password  string `gorm:"type:varchar(30);not_null"`
+	password  []byte `gorm:"type:varchar(30);not_null"`
 	reviews   []Review
 }
 
@@ -87,6 +89,44 @@ type Credentials struct {
 	Username string `json:"username", db:"username"`
 }
 
+func signup(w http.ResponseWriter, r *http.Request, db *gorm.DB) {
+	// Decode the request body and create a new `Credentials` instance
+	creds := &Credentials{}
+	err := json.NewDecoder(r.Body).Decode(creds)
+
+	if err != nil {
+		// return an error message if there is something wrong with the request body
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Salt and hash the password with the bcrypt algorithm
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), 8)
+
+	// Next, insert the username along with hashed password into the db
+	if _, err = db.Query(&User{ // what does db.Create return?
+		createdAt: time.Now(),
+		updatedAt: time.Now(),
+		email:     email,
+		username:  creds.Username,
+		firstName: firstName,
+		lastName:  lastName,
+		password:  hashedPassword,
+	}); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+/*
+	email     string `gorm:"type:varchar(100);unique;not_null"`
+	username  string `gorm:"type:varchar(50);unique;not null"`
+	firstName string `gorm:"type:varchar(30);not_null"`
+	lastName  string `gorm:"type:varchar(30);not_null"`
+	password  string `gorm:"type:varchar(30);not_null"`
+	reviews   []Review
+*/
+
 func main() {
 
 	// Echo instance
@@ -103,10 +143,11 @@ func main() {
 	}
 	e.Renderer = renderer
 
-	// Open the user database
+	// Open the user and review databases
 	userDB := initUserDB()
+	reviewDB := initReviewDB()
 
-	// GET Routes; showing templates
+	// Routes
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "index.html", map[string]interface{}{})
 	})
@@ -118,6 +159,8 @@ func main() {
 	e.GET("/signup", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "index.html", map[string]interface{}{})
 	})
+
+	e.POST("/signup", signup(stuff, otherStuff, userDB))
 
 	// Start Server
 	e.Logger.Fatal(e.Start(":1323"))
